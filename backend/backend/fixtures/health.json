@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "modes": {
+    "vision": "mock",
+    "llm": "mock",
+    "db": "mock",
+    "memory": "mock",
+    "analytics": "mock",
+    "payments": "mock"
+  }
+}

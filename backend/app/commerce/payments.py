@@ -24,15 +24,25 @@ def hold(run_id: str, amount_usd: float, description: str = "") -> PaymentInfo:
         return PaymentInfo(mode="stripe" if LIVE else "mock", status="none")
     if not LIVE:
         return PaymentInfo(mode="mock", payment_intent_id=f"pi_mock_{uuid.uuid4().hex[:12]}", status="held")
+    base = dict(
+        amount=_cents(amount_usd), currency="usd", capture_method="manual",
+        payment_method=STRIPE_TEST_PAYMENT_METHOD, confirm=True,
+        description=(description or f"Roomie run {run_id}")[:500],
+        metadata={"run_id": run_id, "placed_by": "roomie-agent"})
     try:
+        # Payment methods come from Dashboard settings; forbid redirects so a
+        # server-side confirm never needs a return_url.
         pi = stripe.PaymentIntent.create(
-            amount=_cents(amount_usd), currency="usd", capture_method="manual",
-            payment_method=STRIPE_TEST_PAYMENT_METHOD, payment_method_types=["card"], confirm=True,
-            description=(description or f"Roomie run {run_id}")[:500],
-            metadata={"run_id": run_id, "placed_by": "roomie-agent"},
+            **base, automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
             idempotency_key=f"hold-{run_id}")
-    except Exception as e:  # stripe.error.StripeError and network errors
-        raise PaymentError(str(e)) from e
+    except Exception as first:
+        if "automatic_payment_methods" not in str(first):
+            raise PaymentError(str(first)) from first
+        try:  # account rejects that param too: confirm with a return_url instead
+            pi = stripe.PaymentIntent.create(**base, return_url="https://example.com/roomie/return",
+                                             idempotency_key=f"hold2-{run_id}")
+        except Exception as e:
+            raise PaymentError(str(e)) from e
     if pi.status != "requires_capture":
         raise PaymentError(f"unexpected PaymentIntent status {pi.status}")
     return PaymentInfo(mode="stripe", payment_intent_id=pi.id, status="held")

@@ -1,0 +1,123 @@
+/* Hivly: warm ivory, honey accents, and ink. */
+:root {
+  color: #302b23;
+  background: #faf8f3;
+  --honey: #966315;
+  --honey-deep: #62400f;
+  --muted: #756a5b;
+  --line: #e8e0d1;
+  --ink: #2c2922;
+  --gold: #efb744;
+}
+::selection { background: #f5d795; color: #302b23; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline-color: #ad741b;
+}
+.sidebar { background: #282720; border-color: #3c382e; }
+.sidebar .brand { color: #fff8e8; }
+.brand { color: #302b23; }
+.brand-symbol, .brand-dot { color: #c38a27; }
+.sidebar .brand-symbol, .sidebar .brand-dot { color: #efbd5b; }
+.sidebar .new-room-button { background: #efb744; border-color: #efb744; color: #302819; font-weight: 600; }
+.sidebar .new-room-button:hover { background: #f5c86b; }
+.sidebar .nav-label { color: #baad94; font-size: 10px; }
+.sidebar .nav-item { color: #d0c8b7; }
+.sidebar .nav-item:hover:not(:disabled) { background: #36332a; color: #fff4d7; }
+.sidebar .nav-item.active { background: #453a25; color: #ffd382; box-shadow: inset 2px 0 #eeb949; }
+.sidebar .profile-button { border-color: #494338; }
+.sidebar .profile-button strong { color: #eee5d3; }
+.sidebar .profile-button small, .sidebar .profile-button > svg { color: #beb09a; }
+.sidebar-message { position: relative; color: #bd9556; }
+.sidebar-message h3 { color: #dec18b; font-size: 28px; }
+.sidebar-message p { color: #b8ad98; }
+.sidebar-message::after {
+  content: ""; position: absolute; width: 70px; height: 78px; right: -9px; top: 5px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='80' viewBox='0 0 70 80'%3E%3Cg fill='none' stroke='%23b38b45' stroke-opacity='.14'%3E%3Cpath d='M18 2l16 9v19l-16 9L2 30V11zM52 22l16 9v19l-16 9-16-9V31zM18 42l16 9v19l-16 9L2 70V51z'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+}
+.topbar { background: #fffdf8ed; backdrop-filter: blur(14px); border-color: var(--line); }
+.connection-pill { background: #f5efe2; border-color: #e8ddc7; color: #715a33; }
+.connection-pill:hover { background: #eee1c6; }
+.status-dot { background: #bd8424; }
+h1 { color: #302b23; }
+h1 em { color: #a26a1a; }
+.page-heading p { color: #766b59; }
+.page-heading > div > .eyebrow { color: #8a6c3d; font-size: 10px; }
+.surface { background: #fffefb; border-color: #e7dfd0; box-shadow: 0 5px 24px #51402605; }
+.photo-stage { background: radial-gradient(ellipse at 50% 18%,#fff2ce 0%,#faf3e4 50%,#f3eedf 100%); border-color: #e6d9bb; }
+.photo-stage-header > .eyebrow { color: #8e784f; }
+.photo-stage.has-photo { background: #f7f3e9; }
+.photo-stage.dragging { background: #fff0c7; border-color: #b87e20; box-shadow: 0 0 0 4px #f3d68c55; }
+.photo-stage-footer { border-color: #e1d6bd; }
+.upload-empty { padding-top: 0; }
+.upload-empty h2 { color: #5b4728; max-width: 320px; }
+.upload-empty > p { color: #7a6b51; }
+.upload-empty > small { color: #786e5a; }
+.primary-button {
+  background: #edb445; border-color: #dca238; color: #322816;
+  font-weight: 600; box-shadow: 0 3px 8px #b67a1b15;
+}
+.primary-button:hover:not(:disabled) { background: #f4c461; border-color: #c78a24; box-shadow: 0 5px 15px #a66d1e22; }
+.primary-button:disabled { background: #edce90; border-color: #dfc186; color: #56482d; opacity: .78; }
+.secondary-button { background: #fffdf7; border-color: #dfd2b7; color: #725728; }
+.secondary-button:hover:not(:disabled) { background: #fbefd3; border-color: #c9a456; }
+.text-button { color: #8b601d; }
+.text-button:hover { color: #5d3d0d; }
+.avatar, .top-avatar { background: #f0dba9; color: #76551f; }
+.step.current { color: #78521d; }
+.step.current .step-icon { background: #f8e6ba; border-color: #ddba71; color: #81581b; }
+.step.done .step-icon { background: #f1e8d3; border-color: #e3d3ad; color: #8c6c34; }
+.step-icon, .section-icon { border-radius: 9px; }
+.budget-slider { accent-color: #b47d22; }
+.store-chip.selected { background: #fcf0d3; border-color: #d7ad58; color: #6d4d1c; }
+.product-card.selected { border-color: #d8b05e; }
+.product-card.selected .item-checkbox > span { background: #ad7a24; border-color: #ad7a24; }
+.progress-track { height: 4px; background: #eee5d3; }
+.progress-track > span { background: linear-gradient(90deg,#c38b30,#efbd56); }
+.agent-row.working { background: #fcf1d6; border-color: #e8ca85; }
+.agent-row.working .agent-icon { background: #f3dcab; color: #8a5e1e; }
+.agent-row.working .agent-copy > strong { color: #77501b; }
+.agent-row.working .agent-copy > span { color: #806a44; }
+.agent-status { min-width: 28px; justify-content: center; }
+.active-agent-summary { background: #fbf5e8; border-color: #eadbb9; }
+.working-orb { width: 43px; height: 43px; border-color: #e9d3a4; background: #fff9e9; border-radius: 12px; }
+.active-agent-summary .working-orb .bee-loader { transform: scale(1.15); }
+.agents-panel > .bee-scene { margin-top: -13px; margin-bottom: 8px; }
+.photo-caption .bee-loader { width: 24px; height: 20px; }
+
+/* Real 3D scene remains within its own layout box and never covers controls. */
+.bee-scene { width: 300px; height: 182px; max-width: 100%; position: relative; isolation: isolate; flex-shrink: 0; }
+.bee-scene-canvas { position: absolute; inset: 0 0 17px; z-index: 1; opacity: 0; transition: opacity .5s ease; }
+.bee-scene.is-ready .bee-scene-canvas { opacity: 1; }
+.bee-scene canvas { display: block; width: 100%; height: 100%; }
+.bee-scene-halo { position: absolute; width: 190px; height: 130px; border: 1px solid #dfbe791f; border-radius: 50%; inset: 17px 0 auto; margin: auto; transform: rotate(-15deg); }
+.bee-scene-halo::before, .bee-scene-halo::after { content:""; position: absolute; border: 1px dashed #c89b4535; border-radius: 50%; inset: -17px -25px; }
+.bee-scene-halo::after { inset: 20px -43px; transform: rotate(20deg); border-style: solid; border-color: #e4c78133; }
+.bee-scene-caption { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 9px; font-weight: 600; letter-spacing: 1.6px; color: #997538; }
+.bee-scene-fallback { position: absolute; inset: 0 0 17px; display: grid; place-items: center; }
+.bee-scene-fallback .bee-loader { transform: scale(2.8); }
+.bee-scene-working { width: 100%; height: 158px; }
+.bee-scene-working .bee-scene-halo { height: 95px; top: 10px; }
+.upload-empty .bee-scene { margin: -8px 0 20px; }
+
+/* Compact dimensional bee: no extra WebGL contexts in loading buttons. */
+.bee-loader { display: inline-block; position: relative; width: 31px; height: 23px; flex: 0 0 auto; vertical-align: middle; perspective: 100px; }
+.bee-loader i { position: absolute; display: block; }
+.bee-abdomen { width: 22px; height: 15px; left: 7px; top: 8px; border-radius: 50%; background: repeating-linear-gradient(100deg,#efb73f 0 5px,#413421 5px 9px); box-shadow: inset 0 -3px 3px #7b4b2770,inset 0 3px 2px #fff4c899,0 3px 4px #5e3b1d20; transform: rotate(-8deg); }
+.bee-head { left: 2px; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 30% 20%,#ffe19a,#e8a62a 70%,#af771c); }
+.bee-head b { width: 3px; height: 4px; border-radius: 50%; background: #30271e; position: absolute; left: 3px; top: 3px; }
+.bee-antenna { left: 6px; top: 4px; width: 6px; height: 7px; border-left: 1px solid #5e4724; border-radius: 50%; transform: rotate(-25deg); }
+.bee-wing { width: 9px; height: 14px; border-radius: 80% 80% 50% 50%; top: 0; left: 12px; background: linear-gradient(120deg,#fffefaed,#e4dcc099); border: 1px solid #bda66b77; transform-origin: 50% 100%; }
+.bee-wing-back { transform: rotate(35deg) rotateY(20deg); animation: bee-wing-back .13s ease-in-out infinite alternate; }
+.bee-wing-front { transform: rotate(-25deg); animation: bee-wing-front .13s ease-in-out infinite alternate; }
+@keyframes bee-wing-front { from { transform: rotate(-28deg) rotateX(15deg); } to { transform: rotate(-45deg) rotateX(65deg); } }
+@keyframes bee-wing-back { from { transform: rotate(25deg) rotateY(30deg); } to { transform: rotate(55deg) rotateY(60deg); } }
+.bee-loader.is-still *, [data-motion="reduced"] .bee-loader *, [data-motion="reduced"] .pulsing, [data-motion="reduced"] .spin { animation: none !important; }
+
+@media (max-width: 780px) {
+  .page-heading > div > .eyebrow { letter-spacing: 1.2px; font-size: 9px; }
+  .bee-scene { width: 280px; height: 170px; }
+  .bee-scene-working { width: 100%; height: 146px; }
+  .upload-empty .bee-scene { margin-bottom: 21px; }
+  .upload-empty h2 { max-width: 280px; }
+}
+@media (prefers-reduced-motion: reduce) { .bee-loader * { animation: none !important; } }

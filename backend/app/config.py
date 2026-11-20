@@ -22,8 +22,10 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_TEST_PAYMENT_METHOD = os.getenv("STRIPE_TEST_PAYMENT_METHOD", "pm_card_visa")
 
 SHOPIFY_STORE_DOMAIN = os.getenv("SHOPIFY_STORE_DOMAIN", "")      # roomie-demo.myshopify.com
-SHOPIFY_ADMIN_TOKEN = os.getenv("SHOPIFY_ADMIN_TOKEN", "")        # shpat_...
-SHOPIFY_API_VERSION = os.getenv("SHOPIFY_API_VERSION", "2025-01")
+SHOPIFY_ADMIN_TOKEN = os.getenv("SHOPIFY_ADMIN_TOKEN", "")        # legacy shpat_... (optional)
+SHOPIFY_CLIENT_ID = os.getenv("SHOPIFY_CLIENT_ID", "")            # Dev Dashboard app
+SHOPIFY_CLIENT_SECRET = os.getenv("SHOPIFY_CLIENT_SECRET", "")
+SHOPIFY_API_VERSION = os.getenv("SHOPIFY_API_VERSION", "2026-07")
 
 AMAZON_ASSOCIATE_TAG = os.getenv("AMAZON_ASSOCIATE_TAG", "")
 
@@ -40,4 +42,4 @@ def modes() -> dict:
             "db": m(USE_SINGLESTORE, "singlestore"), "memory": m(USE_COGNEE, "cognee"),
             "analytics": m(USE_AMPLITUDE, "amplitude"),
             "payments": m(USE_STRIPE and bool(STRIPE_SECRET_KEY), "stripe"),
-            "shopify": m(USE_SHOPIFY and bool(SHOPIFY_ADMIN_TOKEN), "shopify")}
+            "shopify": m(USE_SHOPIFY and bool(SHOPIFY_STORE_DOMAIN) and bool(SHOPIFY_ADMIN_TOKEN or (SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET)), "shopify")}

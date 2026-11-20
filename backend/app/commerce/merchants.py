@@ -3,13 +3,14 @@
 - amazon:  official Add-to-Cart form URL with every ASIN (no API key needed)
 - walmart: affiliate add-to-cart URL (verify with one real item ID at 3:00; fallback = product page)
 """
+import time
 import uuid
 from urllib.parse import urlencode
 
 import httpx
 
 from app.config import (AMAZON_ASSOCIATE_TAG, SHOPIFY_ADMIN_TOKEN, SHOPIFY_API_VERSION,
-                        SHOPIFY_STORE_DOMAIN, USE_SHOPIFY)
+                        SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, SHOPIFY_STORE_DOMAIN, USE_SHOPIFY)
 from app.contracts import ExecutionMode, MerchantResult, RunItem, Store
 
 EXECUTION_MODE: dict[Store, ExecutionMode] = {"shopify": "auto_buy", "amazon": "cart_link", "walmart": "cart_link"}
@@ -29,14 +30,36 @@ mutation orderCreate($order: OrderCreateOrderInput!) {
 }"""
 
 
+_TOKEN = {"value": "", "expires": 0.0}
+
+
+def _shopify_token() -> str:
+    """Legacy admin token if given; else Dev Dashboard client-credentials grant (token cached)."""
+    if SHOPIFY_ADMIN_TOKEN:
+        return SHOPIFY_ADMIN_TOKEN
+    if _TOKEN["value"] and time.time() < _TOKEN["expires"] - 60:
+        return _TOKEN["value"]
+    r = httpx.post(f"https://{SHOPIFY_STORE_DOMAIN}/admin/oauth/access_token",
+                   data={"grant_type": "client_credentials", "client_id": SHOPIFY_CLIENT_ID,
+                         "client_secret": SHOPIFY_CLIENT_SECRET}, timeout=20)
+    r.raise_for_status()
+    body = r.json()
+    _TOKEN["value"] = body["access_token"]
+    _TOKEN["expires"] = time.time() + float(body.get("expires_in", 3600))
+    return _TOKEN["value"]
+
+
+def shopify_ready() -> bool:
+    return USE_SHOPIFY and bool(SHOPIFY_STORE_DOMAIN) and bool(
+        SHOPIFY_ADMIN_TOKEN or (SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET))
+
+
 def shopify_execute(run_id: str, items: list[RunItem], ship_to: dict) -> MerchantResult:
     ids = [i.id for i in items]
-    if not (USE_SHOPIFY and SHOPIFY_ADMIN_TOKEN and SHOPIFY_STORE_DOMAIN):
+    if not shopify_ready():
         return MerchantResult(store="shopify", mode="auto_buy", status="ordered",
                               order_id=f"#MOCK-{uuid.uuid4().hex[:4].upper()}", item_ids=ids, amount_usd=_amount(items))
-    order = {
-        "lineItems": [{"variantId": f"gid://shopify/ProductVariant/{i.product.store_product_id}", "quantity": 1}
-                      for i in items],
+    base = {
         "email": ship_to.get("email"),
         "financialStatus": "PAID",
         "shippingAddress": {k: ship_to.get(k) for k in ("address1", "city", "zip")} |
@@ -45,17 +68,33 @@ def shopify_execute(run_id: str, items: list[RunItem], ship_to: dict) -> Merchan
         "note": f"Placed by Roomie agent, run {run_id}",
         "tags": ["roomie", run_id],
     }
+    by_variant = [{"variantId": f"gid://shopify/ProductVariant/{i.product.store_product_id}", "quantity": 1}
+                  for i in items]
+    # Fallback: custom line items (title + price) — works without real products in the store.
+    custom = [{"title": i.product.name, "quantity": 1, "requiresShipping": True,
+               "priceSet": {"shopMoney": {"amount": f"{i.product.price_usd:.2f}", "currencyCode": "USD"}}}
+              for i in items]
     url = f"https://{SHOPIFY_STORE_DOMAIN}/admin/api/{SHOPIFY_API_VERSION}/graphql.json"
-    try:
-        r = httpx.post(url, json={"query": _ORDER_CREATE, "variables": {"order": order}},
-                       headers={"X-Shopify-Access-Token": SHOPIFY_ADMIN_TOKEN}, timeout=20)
+
+    def _create(line_items):
+        r = httpx.post(url, json={"query": _ORDER_CREATE, "variables": {"order": base | {"lineItems": line_items}}},
+                       headers={"X-Shopify-Access-Token": _shopify_token()}, timeout=20)
         r.raise_for_status()
         body = r.json()
         res = (body.get("data") or {}).get("orderCreate") or {}
         errs = res.get("userErrors") or body.get("errors")
         if errs or not res.get("order"):
             raise RuntimeError(str(errs))
-        o = res["order"]
+        return res["order"]
+
+    try:
+        all_numeric = all(i.product.store_product_id.isdigit() for i in items)
+        try:
+            o = _create(by_variant) if all_numeric else _create(custom)
+        except RuntimeError as first:
+            if not all_numeric or "not found" not in str(first):
+                raise
+            o = _create(custom)
         numeric = o["id"].rsplit("/", 1)[-1]
         return MerchantResult(store="shopify", mode="auto_buy", status="ordered", order_id=o["name"],
                               url=f"https://{SHOPIFY_STORE_DOMAIN}/admin/orders/{numeric}",

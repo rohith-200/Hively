@@ -8,6 +8,8 @@ Naman’s frontend follows the complete **Roomie — Tech Design & Team Plan** (
 
 Requires Node.js 22.12+ (Node 24 recommended).
 
+Copy `.env.example` to `.env.local` before starting. The default configuration connects to the FastAPI backend at `http://127.0.0.1:8000`; start the backend first. Set `VITE_API_MODE=mock` in `.env.local` to use the standalone frontend demo.
+
 On Windows, double-click **Start-Hivly.cmd** in the project folder. It starts the local server in the background and opens Hivly. If Hivly is already running, it reuses the server.
 
 From a terminal, `npm start` inside `frontend/` does the same background startup without opening a browser. The launcher checks both the page and API before reporting success. Startup logs are in `frontend/.hivly/`, which is excluded from Git.
@@ -88,7 +90,7 @@ No secrets belong in `VITE_` variables: they are public browser configuration. N
 
 ## Mock behavior
 
-- The local mock API lives in `mocks/server.ts`, not in the team’s backend folder. Its eight preparation steps replay every **600 ms**.
+- The optional frontend-only mock API lives in `mocks/server.ts`, not in the team’s backend folder. Set `VITE_API_MODE=mock` to use it; its eight preparation steps replay every **600 ms**. Live mode proxies requests to the backend and consumes its server-sent events.
 - Exact built-in sample identifiers choose kitchen/living-room/bedroom/office fixtures. **Arbitrary filenames and uploads are not classified locally.** They produce an explicitly unclassified demo profile and example recommendations. Photo-specific recommendations need Jaideep’s live vision and the real catalog.
 - Built-in sample room illustrations are flat SVG assets converted to valid PNG uploads. Product images are local illustrations of fictional demo products.
 - Mock selections obey the chosen stores and budget. Approvals create local cart-preview dialogs and simulated payment amounts; they do not place real orders, charge money, or create real Amazon/Walmart carts.

@@ -1,0 +1,125 @@
+{
+  "events": [
+    {
+      "seq": 0,
+      "ts": "2026-11-20T21:05:12Z",
+      "actor": "user",
+      "action": "run.started",
+      "summary": "Photo uploaded, budget $400, note: we cook a lot",
+      "data": {},
+      "hash": "ed7c16804fda831a2fdaff446e0262c172a9196c005b2be38aaa864f36b9dc9f",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "seq": 1,
+      "ts": "2026-11-20T21:05:14Z",
+      "actor": "vision",
+      "action": "llm.vision",
+      "summary": "Kitchen, mid-century modern (86%). Walnut cabinets, brass pulls",
+      "data": {},
+      "hash": "81a522abcad9bd8a8938b2adbd799652334dbfbb62b61a05ff97399956233a50",
+      "prev_hash": "ed7c16804fda831a2fdaff446e0262c172a9196c005b2be38aaa864f36b9dc9f"
+    },
+    {
+      "seq": 2,
+      "ts": "2026-11-20T21:05:16Z",
+      "actor": "memory",
+      "action": "memory.recalled",
+      "summary": "Prefers matte finishes; removed a glossy kettle last time",
+      "data": {},
+      "hash": "5328da3e2e91081d5bee6e7046b475d8be65f429ae6d6f055c6e7c44328fe57b",
+      "prev_hash": "81a522abcad9bd8a8938b2adbd799652334dbfbb62b61a05ff97399956233a50"
+    },
+    {
+      "seq": 3,
+      "ts": "2026-11-20T21:05:18Z",
+      "actor": "stylist",
+      "action": "llm.stylist",
+      "summary": "7 search intents written, avoiding glossy",
+      "data": {},
+      "hash": "95f60849fdbcb615a8f75890dc5a28ea7f48f08e057413a50d4c3871cf52ce8b",
+      "prev_hash": "5328da3e2e91081d5bee6e7046b475d8be65f429ae6d6f055c6e7c44328fe57b"
+    },
+    {
+      "seq": 4,
+      "ts": "2026-11-20T21:05:20Z",
+      "actor": "catalog",
+      "action": "catalog.searched",
+      "summary": "28 candidates across Shopify, Amazon, Walmart",
+      "data": {},
+      "hash": "b3667f76b7f1889d5d42b7a3d1400ea6d486af8ff8078342f5e4d397bb05cae7",
+      "prev_hash": "95f60849fdbcb615a8f75890dc5a28ea7f48f08e057413a50d4c3871cf52ce8b"
+    },
+    {
+      "seq": 5,
+      "ts": "2026-11-20T21:05:22Z",
+      "actor": "curator",
+      "action": "llm.curator",
+      "summary": "Picked 6 items, skipped bar stools (no match under $300)",
+      "data": {},
+      "hash": "d1a735c2d375345a8c92d6e31376116f95551d9d31f2b490af467d00fb6d0942",
+      "prev_hash": "b3667f76b7f1889d5d42b7a3d1400ea6d486af8ff8078342f5e4d397bb05cae7"
+    },
+    {
+      "seq": 6,
+      "ts": "2026-11-20T21:05:24Z",
+      "actor": "critic",
+      "action": "llm.critic",
+      "summary": "1 swap: glossy canisters -> walnut-lid canisters. Style score 0.86",
+      "data": {},
+      "hash": "5b4ddefc97ba1a28427260c9ce395ff5be8d9076f3990643ffde80983e6b8a3b",
+      "prev_hash": "d1a735c2d375345a8c92d6e31376116f95551d9d31f2b490af467d00fb6d0942"
+    },
+    {
+      "seq": 7,
+      "ts": "2026-11-20T21:05:26Z",
+      "actor": "policy",
+      "action": "guardrails.passed",
+      "summary": "$389.94 <= $400 budget; every item <= $300; all in stock",
+      "data": {},
+      "hash": "9e64305c4bf57ccb5e6292b822927e6805354d538acb1dc30624c69bd9352f7a",
+      "prev_hash": "5b4ddefc97ba1a28427260c9ce395ff5be8d9076f3990643ffde80983e6b8a3b"
+    },
+    {
+      "seq": 8,
+      "ts": "2026-11-20T21:05:28Z",
+      "actor": "payments",
+      "action": "payment.held",
+      "summary": "Held $234.98 on card for Shopify items, pi_test_123",
+      "data": {},
+      "hash": "4ba260dc811e0f831981d6bbd74c5d38629f010412db4b4ca8ce55555b7029e8",
+      "prev_hash": "9e64305c4bf57ccb5e6292b822927e6805354d538acb1dc30624c69bd9352f7a"
+    },
+    {
+      "seq": 9,
+      "ts": "2026-11-20T21:05:30Z",
+      "actor": "user",
+      "action": "run.approved",
+      "summary": "Approved 5 items, removed dish towels",
+      "data": {},
+      "hash": "a6fb206ba3afd44ce39e495578997befd719b989181fe07a8724eb3281e504f6",
+      "prev_hash": "4ba260dc811e0f831981d6bbd74c5d38629f010412db4b4ca8ce55555b7029e8"
+    },
+    {
+      "seq": 10,
+      "ts": "2026-11-20T21:05:32Z",
+      "actor": "merchant",
+      "action": "merchant.executed",
+      "summary": "Shopify order #1042; Amazon + Walmart carts ready",
+      "data": {},
+      "hash": "5bb2316cd0f72f871e6f00bed08e05a66d7ea5b730a8f7d486724e4c7efde1c6",
+      "prev_hash": "a6fb206ba3afd44ce39e495578997befd719b989181fe07a8724eb3281e504f6"
+    },
+    {
+      "seq": 11,
+      "ts": "2026-11-20T21:05:34Z",
+      "actor": "payments",
+      "action": "payment.captured",
+      "summary": "Captured $234.98",
+      "data": {},
+      "hash": "52c26d8c96522192c9aa56f09113e84857fbdf759c6f8b390c605edf4e9129c8",
+      "prev_hash": "5bb2316cd0f72f871e6f00bed08e05a66d7ea5b730a8f7d486724e4c7efde1c6"
+    }
+  ],
+  "chain_valid": true
+}

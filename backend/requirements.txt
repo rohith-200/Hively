@@ -7,5 +7,5 @@ httpx
 stripe
 openai          # Jaideep: Nebius is OpenAI-compatible
 singlestoredb   # Suman
+fastembed       # Suman: bge-small embeddings for vector search
 amplitude-analytics  # Suman
-# cognee        # Suman: install if USE_COGNEE=1

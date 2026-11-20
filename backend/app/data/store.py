@@ -2,14 +2,14 @@
 Bodies below are in-memory MOCKS; keep signatures, add the SingleStore path behind USE_SINGLESTORE."""
 from app.config import USE_SINGLESTORE  # noqa: F401
 from app.contracts import Product, Run, SearchIntent, Store
-from app.data.mock_catalog import CATALOG
+from app.data.mock_catalog import CATALOG, DESCRIPTIONS
 
 _RUNS: dict[str, Run] = {}
 
 
 def _score(p: Product, intent: SearchIntent) -> float:
     words = set(intent.query.lower().split())
-    text = f"{p.name} {p.material} {' '.join(p.colors)}".lower()
+    text = f"{p.name} {p.style} {p.material} {' '.join(p.colors)} {DESCRIPTIONS.get(p.id, '')}".lower()
     s = sum(1 for w in words if w in text) / max(len(words), 1)
     if any(a in text for a in intent.avoid):
         s -= 0.5

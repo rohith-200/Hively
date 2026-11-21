@@ -7,7 +7,6 @@ Needs SINGLESTORE_URL in .env for the SingleStore part; the demo user is seeded 
 Safe to re-run: products are replaced by id, the demo user is only seeded once.
 """
 import asyncio
-import json
 import sys
 import time
 
@@ -25,18 +24,7 @@ DEMO_FACTS = [
 
 
 def seed_products() -> int:
-    s2.create_tables()
-    texts = [f"{p.name}. {p.category}, {p.style}, {p.room}. Colors: {', '.join(p.colors)}. "
-             f"Material: {p.material}. {DESCRIPTIONS.get(p.id, '')}" for p in CATALOG]
-    vecs = s2.embed(texts)
-    for p, v in zip(CATALOG, vecs):
-        s2.query("REPLACE INTO products (id, store, store_product_id, name, room, category, style, colors, "
-                 "material, price_usd, image_url, url, in_stock, description, vec) "
-                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                 (p.id, p.store, p.store_product_id, p.name, p.room, p.category, p.style,
-                  json.dumps(p.colors), p.material, p.price_usd, p.image_url, p.url,
-                  1 if p.in_stock else 0, DESCRIPTIONS.get(p.id, ""), s2.vec_param(v)))
-    return len(CATALOG)
+    return s2.upsert_products([(p, DESCRIPTIONS.get(p.id, "")) for p in CATALOG])
 
 
 def check() -> None:

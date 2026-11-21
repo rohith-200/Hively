@@ -32,6 +32,50 @@ def _room(room_type: str) -> str | None:
     return next((room for room in _ROOMS if room.split()[0] in r), None)
 
 
+# ------------------------------------------------------------------ categories
+# The vision model writes categories in its own words; the catalog has fixed ones.
+_ALIASES = {
+    "flatware": "cutlery set", "silverware": "cutlery set", "cutlery": "cutlery set",
+    "tea towels": "dish towels", "hand towels": "dish towels",
+    "storage jars": "canisters", "food storage containers": "canisters",
+    "utensil crock": "utensil holder", "utensil organizer": "utensil holder",
+    "chopping board": "cutting board", "serving board": "cutting board",
+    "counter stools": "bar stools", "kitchen stools": "bar stools",
+    "tea kettle": "kettle", "pendant lighting": "pendant light", "pendant lamp": "pendant light",
+    "rug": "area rug", "accent pillows": "throw pillows", "cushions": "throw pillows",
+    "artwork": "wall art", "throw": "throw blanket",
+}
+_GENERIC = {"kitchen", "set", "new", "modern", "decorative", "accent", "living", "room", "bedroom", "home"}
+
+
+def _words(text: str) -> list[str]:
+    words = text.lower().replace("-", " ").replace("_", " ").split()
+    return [w[:-1] if len(w) > 3 and w.endswith("s") else w for w in words]
+
+
+def categories(room_type: str | None = None) -> list[str]:
+    """Categories the catalog can actually fill, for this room or for all rooms.
+    Give this list to the vision model so it only asks for things we stock."""
+    room = _room(room_type) if room_type else None
+    return sorted({p.category for p in CATALOG if not room or p.room == room})
+
+
+def resolve_category(category: str, room_type: str | None = None) -> str | None:
+    """Map a free-text category onto a catalog category: exact, alias, then same head noun
+    ("kitchen towels" -> "dish towels"). None if the catalog has nothing like it."""
+    want = " ".join(_words(category))
+    known = categories(room_type) or categories()
+    by_norm = {" ".join(_words(c)): c for c in known}
+    if want in by_norm:
+        return by_norm[want]
+    alias = _ALIASES.get(category.lower().strip()) or _ALIASES.get(want)
+    if alias in known:
+        return alias
+    head = next((w for w in reversed(_words(category)) if w not in _GENERIC), "")
+    matches = [c for norm, c in by_norm.items() if head and head in norm.split()]
+    return matches[0] if len(matches) == 1 else None
+
+
 # ------------------------------------------------------------------ search
 def _mock_score(p: Product, intent: SearchIntent) -> float:
     words = set(intent.query.lower().split())
@@ -43,18 +87,20 @@ def _mock_score(p: Product, intent: SearchIntent) -> float:
 
 
 def _mock_search(intent: SearchIntent, room_type: str, stores: list[Store], k: int) -> list[Product]:
-    rows = [p for p in CATALOG if p.category == intent.category and p.store in stores and p.in_stock
+    category = resolve_category(intent.category, room_type)
+    rows = [p for p in CATALOG if p.category == category and p.store in stores and p.in_stock
             and (intent.max_price is None or p.price_usd <= intent.max_price)]
     scored = [p.model_copy(update={"score": _mock_score(p, intent)}) for p in rows]
     return sorted(scored, key=lambda p: -(p.score or 0))[:k]
 
 
 def _s2_search(intent: SearchIntent, room_type: str, stores: list[Store], k: int) -> list[Product]:
-    if not stores:
+    category = resolve_category(intent.category, room_type)
+    if not stores or not category:
         return []
     text = " ".join([intent.query or intent.category, *intent.must_have])
     where = ["in_stock = 1", "LOWER(category) = %s", f"store IN ({', '.join(['%s'] * len(stores))})"]
-    params: list = [s2.vec_param(s2.embed([text])[0]), intent.category.lower().strip(), *stores]
+    params: list = [s2.vec_param(s2.embed([text])[0]), category.lower(), *stores]
     room = _room(room_type)
     if room:
         where.append("room = %s")

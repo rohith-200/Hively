@@ -6,8 +6,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from app import llm
-from app.contracts import AuditResponse, Run, SearchIntent, UserMemory
+from app.contracts import AuditResponse, Run, SearchIntent
 from app.data import analytics, audit, memory, store
 from app.data.mock_catalog import CATALOG
 
@@ -31,19 +30,22 @@ def test_catalog_shape():
 
 
 def test_mock_flow_picks_match_fixture():
-    """The mock stylist's queries must rank the fixture's products first and stay under $400."""
-    profile = llm.analyze_room(None, "", "")
-    intents = llm.stylist(profile, UserMemory(source="local"), 400)
+    """Stylist-style queries for the fixture kitchen must rank the fixture's products first, under $400.
+    The intents are built here, not taken from app.llm, so this test only depends on the data layer."""
+    palette = "walnut warm white brass teal"
+    categories = ["knife block", "cutlery set", "canisters", "utensil holder", "cutting board", "dish towels", "bar stools"]
+    intents = [SearchIntent(category=c, query=f"mid-century modern {c} {palette} matte", avoid=["glossy"])
+               for c in categories]
     top = {}
     for it in intents:
-        hits = store.search(it, profile.room_type, ALL, 4)
+        hits = store.search(it, "kitchen", ALL, 4)
         assert hits, it.category
         assert [h.score for h in hits] == sorted((h.score for h in hits), reverse=True)
         top[it.category] = hits[0]
     want = {i.category: i.product.id for i in _fixture_run().items}
     assert {c: p.id for c, p in top.items() if c in want} == want
     assert sum(p.price_usd for c, p in top.items() if c in want) <= 400
-    assert top["bar stools"].price_usd > 300                     # so the curator skips it
+    assert top["bar stools"].price_usd > 300                     # over the per-item cap
 
 
 def test_search_filters():
@@ -58,6 +60,20 @@ def test_search_filters():
 
     rugs = store.search(SearchIntent(category="area rug", query="rug"), "living room", ALL)
     assert [r.id for r in rugs] == ["amz-B0PLACEHOLD19"]         # jute rug is out of stock
+
+
+def test_category_resolution():
+    r = store.resolve_category
+    assert r("Knife Blocks", "kitchen") == "knife block"            # case and plural
+    assert r("kitchen towels", "kitchen") == "dish towels"          # same head noun
+    assert r("flatware", "kitchen") == "cutlery set"                # alias
+    assert r("counter stools", "Kitchen") == "bar stools"
+    assert r("bar cart", "kitchen") is None                         # shares "bar" only, not the noun
+    assert r("appliance polish", "kitchen") is None and r("cabinet hardware", "kitchen") is None
+    assert r("rug", "living room") == "area rug"
+    assert "knife block" in store.categories("kitchen") and "area rug" not in store.categories("kitchen")
+    hits = store.search(SearchIntent(category="kitchen towels", query="white cotton towels"), "kitchen", ALL)
+    assert hits and all(h.category == "dish towels" for h in hits)
 
 
 def test_get_products():

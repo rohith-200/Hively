@@ -109,3 +109,20 @@ def to_db_time(ts: datetime) -> datetime:
 
 def from_db_time(ts: datetime) -> datetime:
     return ts.replace(tzinfo=timezone.utc)
+
+
+def upsert_products(rows: list[tuple]) -> int:
+    """Embed and REPLACE products. rows = [(Product, description), ...]."""
+    if not rows:
+        return 0
+    create_tables()
+    vecs = embed([f"{p.name}. {p.category}, {p.style}, {p.room}. Colors: {', '.join(p.colors)}. "
+                  f"Material: {p.material}. {desc}" for p, desc in rows])
+    for (p, desc), v in zip(rows, vecs):
+        query("REPLACE INTO products (id, store, store_product_id, name, room, category, style, colors, "
+              "material, price_usd, image_url, url, in_stock, description, vec) "
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+              (p.id, p.store, p.store_product_id, p.name, p.room, p.category, p.style,
+               json.dumps(p.colors), p.material, p.price_usd, p.image_url, p.url,
+               1 if p.in_stock else 0, desc, vec_param(v)))
+    return len(rows)

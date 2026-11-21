@@ -4,6 +4,10 @@ kitchen + living room, 3 styles.
 Store ids containing "PLACEHOLD" are not real listings; cart links built from them will not
 work. Ids, names and prices of the original 10 rows (and the 6 used in fixtures/) are unchanged.
 """
+import json
+import os
+from pathlib import Path
+
 from app.contracts import Product
 
 MCM, SCANDI, IND = "mid-century modern", "scandinavian", "industrial"
@@ -91,3 +95,29 @@ CATALOG: list[Product] = [
 ]
 # Search text only (Product has no description field; the SingleStore table does).
 DESCRIPTIONS: dict[str, str] = {r[0]: r[-1] for r in _ROWS}
+
+
+# ---- real Shopify products, written by scripts/sync_shopify_catalog.py ----
+SNAPSHOT = Path(__file__).resolve().parents[2] / "catalog_shopify.json"
+
+
+def _apply_snapshot() -> int:
+    """Swap the placeholder Shopify rows of each synced room for the real ones.
+    Without a snapshot (or with CATALOG_SNAPSHOT=off) the catalog is left as it is."""
+    if os.getenv("CATALOG_SNAPSHOT", "on") == "off" or not SNAPSHOT.exists():
+        return 0
+    try:
+        rows = json.loads(SNAPSHOT.read_text(encoding="utf-8"))["products"]
+        real = [(Product(**{k: v for k, v in r.items() if k != "description"}), r.get("description", "")) for r in rows]
+    except Exception as e:
+        print(f"[catalog] ignoring unreadable {SNAPSHOT.name}: {e!r}")
+        return 0
+    rooms = {p.room for p, _ in real}
+    CATALOG[:] = [p for p in CATALOG if not (p.store == "shopify" and p.room in rooms)]
+    for p, desc in real:
+        CATALOG.append(p)
+        DESCRIPTIONS[p.id] = desc
+    return len(real)
+
+
+_apply_snapshot()

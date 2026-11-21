@@ -8,6 +8,11 @@
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
 
 # macOS
 .DS_Store
+
+# Local runtime data
+memory.json
+catalog_shopify.json

@@ -1,0 +1,55 @@
+# Nightly Shopify -> catalog sync (owner: Suman).
+# Pulls kitchen products from the Shopify store and loads them into SingleStore.
+# Needs these repository secrets: SHOPIFY_STORE_DOMAIN, SINGLESTORE_URL, and either
+# SHOPIFY_ADMIN_TOKEN or SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET.
+name: Catalog sync
+
+on:
+  schedule:
+    - cron: "0 9 * * *"        # 09:00 UTC = 1:00 AM Pacific (standard time), every night
+  workflow_dispatch:           # "Run workflow" button, for the first pull and for re-runs
+    inputs:
+      dry_run:
+        description: "Pull and print only; change nothing"
+        type: boolean
+        default: false
+
+concurrency:
+  group: catalog-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SHOPIFY_STORE_DOMAIN: ${{ secrets.SHOPIFY_STORE_DOMAIN }}
+      SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+      SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+      SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+      SINGLESTORE_URL: ${{ secrets.SINGLESTORE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/fastembed_cache
+          key: fastembed-bge-small-en-v1.5
+      - name: Install dependencies
+        run: pip install httpx "pydantic>=2" python-dotenv singlestoredb fastembed
+      - name: Sync catalog
+        env:
+          FASTEMBED_CACHE_PATH: ${{ runner.temp }}/fastembed_cache
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: python -m scripts.sync_shopify_catalog $DRY_RUN

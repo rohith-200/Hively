@@ -49,7 +49,8 @@ flowchart TB
 
     sync["Catalog sync<br/>nightly GitHub Action"]
 
-    nebius[("Nebius<br/>vision + 3 text models")]
+    nebius[("Nebius<br/>vision + 3 text models<br/>(default host)")]
+    arcee[("Arcee<br/>Trinity models<br/>(alternate host)")]
     s2[("SingleStore<br/>products with vectors,<br/>runs, audit_events")]
     cognee[("Cognee Cloud<br/>per-user memory graph")]
     amp[("Amplitude<br/>funnel")]
@@ -68,6 +69,7 @@ flowchart TB
     audit --> analytics
 
     llm --> nebius
+    llm -.->|"same client,<br/>set by env"| arcee
     store --> s2
     audit --> s2
     memory --> cognee
@@ -97,7 +99,7 @@ sequenceDiagram
     actor User
     participant App
     participant Orch as Orchestrator
-    participant LLM as LLM pipeline (Nebius)
+    participant LLM as LLM pipeline
     participant Data as Data layer
     participant Com as Commerce
 
@@ -149,6 +151,14 @@ Run states: `created` → `analyzing` → `awaiting_approval` → `executing` �
 intent, the Curator chooses, and the Critic checks. Splitting them gives better picks and three
 readable "why" steps in the audit trail. The LLMs may only choose product ids that appear in
 the candidates they were given; the orchestrator drops anything else.
+
+**The model host is configuration.** The LLM client speaks the OpenAI-compatible chat API and
+reads its base URL, key and one model name per role (`NEBIUS_BASE_URL`, `NEBIUS_API_KEY`,
+`NEBIUS_MODEL_VISION`, `_STYLIST`, `_CURATOR`, `_CRITIC`) from the environment. The pipeline was
+designed around Arcee's Trinity models, one size per role (a small model for the Stylist, a
+larger reasoning model for the Curator, a third for the Critic), and the app labels the steps
+that way. The defaults in `.env.example` point at Nebius; pointing them at another
+OpenAI-compatible host such as Arcee is a configuration change.
 
 **Rules live in code, not prompts.** Budget, the per-item cap and stock checks run after the
 LLMs and cannot be talked out of.
@@ -248,7 +258,7 @@ Errors return `{"error": {"code", "message"}}` with one of `RUN_NOT_FOUND`, `INV
 |---|---|---|
 | `backend/app/main.py`, `orchestrator.py`, `events.py` | Rohit | Routes, SSE stream, run state machine |
 | `backend/app/contracts.py` | Rohit | Shared Pydantic models (frozen) |
-| `backend/app/llm/` | Jaideep | Vision, Stylist, Curator, Critic on Nebius |
+| `backend/app/llm/` | Jaideep | Vision, Stylist, Curator, Critic; model host set by env |
 | `backend/app/data/` | Suman | Catalog and runs, audit, memory, analytics |
 | `backend/app/commerce/` | Rohit | Stripe payments and store adapters |
 | `backend/scripts/seed_data.py` | Suman | Creates tables, loads the catalog, seeds the demo user |
@@ -258,12 +268,51 @@ Errors return `{"error": {"code", "message"}}` with one of `RUN_NOT_FOUND`, `INV
 | `backend/fixtures/` | Rohit | Contract-shaped JSON for frontend development |
 | `frontend/` | Naman | Hivly app: React + Vite, live SSE client, built-in mock API |
 
-## Sponsor usage
+## Sponsor technology
 
-| Service | Role in Roomie | Where |
+Built for the Personal Agents Hackathon challenge: *a shopping agent with an audit trail*.
+The diagram shows where each event sponsor's technology sits in a run.
+
+```mermaid
+flowchart LR
+    user(["Room photo<br/>+ budget"])
+    agents["Agent pipeline<br/>Vision, Stylist,<br/>Curator, Critic"]
+    arcee[("Arcee<br/>open-weight models,<br/>one per agent role")]
+    nebius[("Nebius<br/>model host in the<br/>default configuration")]
+    approve(["One approval"])
+    action["Purchase<br/>+ pre-filled carts"]
+
+    cognee[("Cognee<br/>taste memory graph")]
+    s2cat[("SingleStore<br/>catalog vector search")]
+    s2audit[("SingleStore<br/>hash-chained audit trail,<br/>runs")]
+    amp[("Amplitude<br/>step events + funnel")]
+
+    user --> agents --> approve --> action
+
+    nebius -->|"model host"| agents
+    arcee -.->|"alternate host,<br/>set by env"| agents
+
+    cognee -->|"reliable context:<br/>likes, avoids, removed"| agents
+    s2cat -->|"candidates:<br/>semantic match + filters"| agents
+    action -->|"what was bought<br/>and removed"| cognee
+
+    agents -->|"every step"| s2audit
+    action -->|"every step"| s2audit
+    s2audit -->|"mirrored events"| amp
+
+    classDef sponsor fill:#E1F5EE,stroke:#0F6E56,stroke-width:2px,color:#04342C;
+    class cognee,s2cat,s2audit,amp,arcee sponsor;
+```
+
+| Sponsor | What it does in Roomie | Where in the code |
 |---|---|---|
-| SingleStore | Catalog with vector search, runs, audit log | `app/data/store.py`, `audit.py`, `s2.py` |
-| Cognee | Per-user taste memory | `app/data/memory.py` |
-| Amplitude | Agent step events and funnel | `app/data/analytics.py` |
-| Nebius | Vision model plus the Stylist, Curator and Critic models | `app/llm/` |
-| Stripe (not a sponsor) | Hold on plan, capture on approve | `app/commerce/payments.py` |
+| Cognee | The agent's reliable context. Each user has a dataset on Cognee Cloud; purchases, removals and rejections are added after every run, and recall asks the resulting knowledge graph what the user likes and avoids. The answer goes to the Stylist and the Critic | `app/data/memory.py` |
+| SingleStore | The catalog and the record. Products are stored with 384-dimension embeddings, so one SQL query does vector similarity and the hard filters (room, category, store, stock, price) together. Runs and the hash-chained audit events are stored as tables | `app/data/store.py`, `audit.py`, `s2.py`, `scripts/sync_shopify_catalog.py` |
+| Arcee | The agent models. The four roles are sized separately, which is what Arcee's range of open-weight models is for: small and fast for the Stylist, larger for the Curator and Critic. The client is OpenAI-compatible and takes its host and model names from the environment; the repo's default configuration points at Nebius, so running on Arcee means setting the base URL, key and model names | `app/llm/nebius_client.py` |
+| Amplitude | Agent analytics. Every audit event is mirrored as an Amplitude event carrying `run_id`, `user_id`, `room_type` and `style`, which gives the funnel `run_started` → `run_approved` → `payment_captured` | `app/data/analytics.py` |
+
+Cognee, SingleStore and Amplitude each sit behind their own flag (`USE_COGNEE`,
+`USE_SINGLESTORE`, `USE_AMPLITUDE`) and fall back to a local implementation if the service is
+unavailable. Nebius, which is not an event sponsor, is shown unshaded because it is the model host in the
+repo's default configuration; the dashed line marks Arcee as the alternate host the pipeline was
+designed around.

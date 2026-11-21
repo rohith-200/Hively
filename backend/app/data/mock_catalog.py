@@ -121,3 +121,36 @@ def _apply_snapshot() -> int:
 
 
 _apply_snapshot()
+
+
+# ---- images for rows that have no real listing yet ----
+# Amazon/Walmart rows (and Shopify rows of rooms not synced yet) are placeholders with a
+# placehold.co text image. Give them something better to show: the photo of the synced Shopify
+# product with the same name, else the frontend's illustration for the category, else the photo
+# of a synced product in the same category.
+_CATEGORY_ART = {
+    "knife block": "knife", "canisters": "canisters", "utensil holder": "organizer",
+    "bar stools": "stool", "pendant light": "pendant", "floor lamp": "lamp",
+    "coffee table": "table", "throw blanket": "throw", "throw pillows": "throw", "wall art": "art",
+}
+
+
+def _fill_placeholder_images() -> int:
+    real = [p for p in CATALOG if "placehold.co" not in p.image_url and p.image_url]
+    by_name = {p.name.lower(): p.image_url for p in real}
+    by_category: dict[str, str] = {}
+    for p in real:
+        by_category.setdefault(p.category, p.image_url)
+    changed = 0
+    for i, p in enumerate(CATALOG):
+        if "placehold.co" not in p.image_url:
+            continue
+        art = _CATEGORY_ART.get(p.category)
+        url = by_name.get(p.name.lower()) or (f"/products/{art}.svg" if art else None) or by_category.get(p.category)
+        if url:
+            CATALOG[i] = p.model_copy(update={"image_url": url})
+            changed += 1
+    return changed
+
+
+_fill_placeholder_images()
